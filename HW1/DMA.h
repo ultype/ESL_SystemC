@@ -1,48 +1,55 @@
 #include "systemc.h"
-
 #define ADDR_WIDTH 32
 #define DATA_WIDTH 32
+#define SIZE_WIDTH 32
 #define CONTROl_REGISTER_DEPTH 4 
 #define SOURCE_REGISTER_DEPTH 32  
 #define TARGET_REGISTER_DEPTH 32 
 #define BASE_ADDRESS 0  
 
+#define STATE_IDLE  0x00
+#define STATE_START 0x01
+#define STATE_READ  0x02
+#define STATE_WRITE 0x03
+#define STATE_DONE  0x04
 
-SC_MODULE (DMA) {
+SC_MODULE (dma) {
 
-    sc_in<bool> clock ;
-    sc_in<bool> rst ;
-    
-    
-    
-    //Master0 port
-    
-    
-    
-    //
-    sc_in<sc_uint<ADDR_WIDTH> > slave_address ;
-    sc_in<sc_uint<DATA_WIDTH> > slave_data ;
+    // sys port
+    sc_in<bool> clk;
+    sc_in<bool> rst;
 
-    sc_in<bool> clear ;
-    
-    //master_signal
-    sc_in<sc_uint<DATA_WIDTH> > master_data_read ;
-    sc_out<sc_uint<DATA_WIDTH> > master_data_write ;
-    sc_out<sc_uint<ADDR_WIDTH> > master_address ;
+    // CPU->DMA
+    sc_in<bool> clear;
+    sc_in<bool> start;
+    sc_in<sc_uint<ADDR_WIDTH>> source_addr;
+    sc_in<sc_uint<ADDR_WIDTH>> target_addr;
+    sc_in<sc_uint<SIZE_WIDTH>> size;
 
-    sc_out<bool> interrupt ;
-    sc_out<bool> read_or_write ; //0:read , 1:write
+    // DMA->CPU
+    sc_out<bool> interrupt;
 
-    //internal_variable
-    sc_signal<sc_uint<DATA_WIDTH> > base_address ;
-    sc_signal<sc_uint<DATA_WIDTH> > control_register[CONTROl_REGISTER_DEPTH] ;
-    sc_signal<sc_uint<DATA_WIDTH> > state_register ;
-    sc_signal<sc_uint<DATA_WIDTH> > data_register ;
-    sc_signal<sc_uint<DATA_WIDTH> > offset ;
+    // DMA->BUS
+    sc_out<bool> rw;
+    sc_out<sc_uint<ADDR_WIDTH> > waddr;
+    sc_out<sc_uint<DATA_WIDTH> > wdata;
+    sc_out<sc_uint<ADDR_WIDTH> > raddr;
 
+    // BUS->DMA
+    sc_out<sc_uint<DATA_WIDTH>> rdata;
 
     //function
-    void cputodma() ;
+    void dma_ctrl();
+    void dma_to_cpu();
+    void cpu_to_dma();
+
+    //DMA reg
+    sc_uint<ADDR_WIDTH> source_addr_reg;
+    sc_uint<ADDR_WIDTH> target_addr_reg;
+    sc_uint<SIZE_WIDTH> size_reg;
+    sc_uint<bool> start_clear_reg;
+
+
 
     SC_CTOR (dma){
         SC_CTHREAD (cputodma , clock.pos() ) ;
